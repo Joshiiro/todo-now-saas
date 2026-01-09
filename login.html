@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>TodoNow SaaS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+    --bg:#ffffff;
+    --text:#000000;
+    --card:#f3f4f6;
+    --border:#dddddd;
+    --accent:#2ecc71;
+}
+
+body.dark {
+    --bg:#0f1115;
+    --text:#ffffff;
+    --card:#1c1f26;
+    --border:#2a2d36;
+}
+
+body {
+    margin:0;
+    background:#000;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+    display:flex;
+    justify-content:center;
+}
+
+.app {
+    width:390px;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    flex-direction:column;
+}
+
+/* AUTH */
+.auth {
+    padding:40px 20px;
+    text-align:center;
+}
+
+.auth input {
+    width:100%;
+    padding:12px;
+    margin-bottom:12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+}
+
+.auth button {
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    background:var(--accent);
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+}
+
+/* HEADER */
+.header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:16px;
+    border-bottom:1px solid var(--border);
+}
+
+.header button {
+    background:none;
+    border:none;
+    font-size:22px;
+    color:var(--text);
+    cursor:pointer;
+}
+
+/* TASKS */
+.tasks {
+    flex:1;
+    padding:20px;
+}
+
+.task {
+    background:var(--card);
+    border-radius:14px;
+    padding:14px;
+    margin-bottom:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.task.done {
+    opacity:0.5;
+    text-decoration:line-through;
+}
+
+/* ADD BAR */
+.add-bar {
+    display:flex;
+    padding:14px;
+    border-top:1px solid var(--border);
+}
+
+.add-bar input {
+    flex:1;
+    padding:12px;
+    border-radius:12px;
+    border:none;
+    background:var(--card);
+    color:var(--text);
+}
+
+.add-bar button {
+    margin-left:8px;
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:var(--accent);
+    color:white;
+    border:none;
+    font-size:22px;
+    cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- AUTH -->
+<div id="auth" class="auth">
+    <h2>TodoNow</h2>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Mot de passe">
+    <button onclick="login()">Connexion / Inscription</button>
+</div>
+
+<!-- MAIN APP -->
+<div id="main" style="display:none;">
+    <div class="header">
+        <button onclick="logout()">⎋</button>
+        <strong>Today</strong>
+        <button onclick="toggleTheme()">🌙</button>
+    </div>
+
+    <div class="tasks" id="taskList"></div>
+
+    <div class="add-bar">
+        <input type="text" id="taskInput" placeholder="Add a task...">
+        <button onclick="addTask()">＋</button>
+    </div>
+</div>
+
+</div>
+
+<script>
+let users = JSON.parse(localStorage.getItem("users")) || {};
+let currentUser = localStorage.getItem("currentUser");
+let tasks = [];
+
+/* AUTO LOGIN */
+if(currentUser && users[currentUser]) {
+    loadUser();
+}
+
+/* LOGIN / REGISTER */
+function login() {
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!email || !password) {
+        alert("Veuillez remplir tous les champs");
+        return;
+    }
+
+    if (!users[email]) {
+        // INSCRIPTION
+        users[email] = {
+            password: password,
+            tasks: []
+        };
+    } else if (users[email].password !== password) {
+        alert("Mot de passe incorrect");
+        return;
+    }
+
+    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.setItem("currentUser", email);
+    loadUser();
+}
+
+/* LOAD USER */
+function loadUser() {
+    currentUser = localStorage.getItem("currentUser");
+    tasks = users[currentUser].tasks;
+
+    document.getElementById("auth").style.display = "none";
+    document.getElementById("main").style.display = "block";
+
+    renderTasks();
+}
+
+/* LOGOUT */
+function logout() {
+    localStorage.removeItem("currentUser");
+    location.reload();
+}
+
+/* TASKS */
+function renderTasks() {
+    const list = document.getElementById("taskList");
+    list.innerHTML = "";
+
+    tasks.forEach((task, index) => {
+        const div = document.createElement("div");
+        div.className = "task" + (task.done ? " done" : "");
+
+        div.innerHTML = `
+            ${index + 1}. ${task.text}
+            <button onclick="toggleTask(${index})">✔</button>
+        `;
+
+        list.appendChild(div);
+    });
+
+    users[currentUser].tasks = tasks;
+    localStorage.setItem("users", JSON.stringify(users));
+}
+
+function addTask() {
+    const input = document.getElementById("taskInput");
+    if (!input.value.trim()) return;
+
+    tasks.push({ text: input.value, done: false });
+    input.value = "";
+    renderTasks();
+}
+
+function toggleTask(index) {
+    tasks[index].done = !tasks[index].done;
+    renderTasks();
+}
+
+/* DARK MODE */
+function toggleTheme() {
+    document.body.classList.toggle("dark");
+}
+</script>
+
+</body>
+</html>
